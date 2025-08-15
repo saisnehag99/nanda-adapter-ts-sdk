@@ -19,6 +19,7 @@ import PQueue from "p-queue";
 import { EventEmitter as EventSignal } from "events";
 import { A2AClient } from "@a2a-js/sdk/client";
 import { Message, TextPart, SendMessageSuccessResponse } from "@a2a-js/sdk";
+import { parse_jsonrpc_response, parse_jsonrpc_response_task_id } from "./mcp_utils.ts";
 
 // Global variables
 let bridge_process: any = null;
@@ -217,18 +218,21 @@ app.post('/api/send', async (req: Request, res: Response) => {
 
         console.log('Response:', response_message);
 
-        const response_text =
-        'content' in response_message && response_message.content && 'text' in response_message.content // TODO
-            ? response_message.content.text
-            : null;
+        const response_text = parse_jsonrpc_response(response_message);
 
         if (!response_text) {
             return res.status(500).json({ error: 'Received non-text response' });
         }
 
+        const response_task_id = parse_jsonrpc_response_task_id(response_message);
+
+        if (!response_task_id) {
+            return res.status(500).json({ error: 'No task ID in response' });
+        }
+
         return res.json({
             response: response_text,
-            task_id: response_message.taskId,
+            task_id: response_task_id,
             agent_id,
         });
     } catch (e) {

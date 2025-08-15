@@ -45,6 +45,32 @@ export function parse_jsonrpc_response(response: string | object): string {
     return typeof response === "string" ? response : JSON.stringify(response);
 }
 
+export function parse_jsonrpc_response_task_id(response: string | object): string {
+    /*Helper function to parse JSON-RPC responses from MCP server*/
+    let response_obj: any = response;
+
+    // If response is a string, try to parse it as JSON
+    if (typeof response === "string") {
+        try {
+            response_obj = JSON.parse(response);
+        } catch {
+            return response;
+        }
+    }
+
+    // Ensure it's an object with the expected JSON-RPC structure
+    if (
+        typeof response_obj === "object" &&
+        response_obj !== null &&
+        "result" in response_obj
+    ) {
+        return response_obj.result?.taskId || String(response);
+    }
+
+    // Fallback: return original response as string
+    return typeof response === "string" ? response : JSON.stringify(response);
+}
+
 export class MCPClient {
     private mcp: Client;
     private anthropic: Anthropic;
